@@ -176,12 +176,24 @@ describe('handleAutoUpdate', () => {
     vi.useRealTimers();
   });
 
-  it('should do nothing if update prompts are disabled', () => {
+  it('should still process updates if update prompts are disabled', () => {
     mockSettings.merged.general.enableAutoUpdateNotification = false;
+    mockGetInstallationInfo.mockReturnValue({
+      updateCommand: 'npm i -g @google/gemini-cli@latest',
+      updateMessage: undefined,
+      isGlobal: true,
+      packageManager: PackageManager.NPM,
+    });
     handleAutoUpdate(mockUpdateInfo, mockSettings, '/root', mockSpawn);
-    expect(mockGetInstallationInfo).not.toHaveBeenCalled();
-    expect(updateEventEmitter.emit).not.toHaveBeenCalled();
-    expect(mockSpawn).not.toHaveBeenCalled();
+    expect(mockGetInstallationInfo).toHaveBeenCalled();
+    expect(updateEventEmitter.emit).toHaveBeenCalledWith('update-received', {
+      message: 'An update is available!',
+    });
+    expect(mockSpawn).toHaveBeenCalledWith('npm i -g @google/gemini-cli@2.0.0', {
+      detached: true,
+      shell: true,
+      stdio: 'ignore',
+    });
   });
 
   it('should emit "update-received" but not update if auto-updates are disabled', () => {

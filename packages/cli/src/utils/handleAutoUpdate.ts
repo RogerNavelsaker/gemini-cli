@@ -77,10 +77,6 @@ export function handleAutoUpdate(
     return;
   }
 
-  if (!settings.merged.general.enableAutoUpdateNotification) {
-    return;
-  }
-
   const installationInfo = getInstallationInfo(
     projectRoot,
     settings.merged.general.enableAutoUpdate,

@@ -118,7 +118,9 @@ export const ShellToolMessage: React.FC<ShellToolMessageProps> = ({
         if (
           !(
             e instanceof Error &&
-            e.message.includes('Cannot resize a pty that has already exited')
+            (e.message.includes('Cannot resize a pty that has already exited') ||
+              e.message.includes('EBADF') ||
+              ('code' in e && (e.code === 'EBADF' || e.code === 'ESRCH')))
           )
         ) {
           throw e;

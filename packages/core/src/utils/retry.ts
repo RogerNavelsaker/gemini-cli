@@ -17,7 +17,7 @@ import { getErrorStatus, ModelNotFoundError } from './httpErrors.js';
 import type { RetryAvailabilityContext } from '../availability/modelPolicy.js';
 
 export type { RetryAvailabilityContext };
-export const DEFAULT_MAX_ATTEMPTS = 10;
+export const DEFAULT_MAX_ATTEMPTS = 1000;
 
 export interface RetryOptions {
   maxAttempts: number;
@@ -41,8 +41,8 @@ export interface RetryOptions {
 
 const DEFAULT_RETRY_OPTIONS: RetryOptions = {
   maxAttempts: DEFAULT_MAX_ATTEMPTS,
-  initialDelayMs: 5000,
-  maxDelayMs: 30000, // 30 seconds
+  initialDelayMs: 1000,
+  maxDelayMs: 5000, // 5 seconds max between retries
   shouldRetryOnError: isRetryableError,
 };
 
@@ -271,10 +271,7 @@ export async function retryWithBackoff<T>(
 
       const errorCode = getErrorStatus(error);
 
-      if (
-        classifiedError instanceof TerminalQuotaError ||
-        classifiedError instanceof ModelNotFoundError
-      ) {
+      if (classifiedError instanceof ModelNotFoundError) {
         if (onPersistent429) {
           try {
             const fallbackModel = await onPersistent429(
@@ -292,6 +289,39 @@ export async function retryWithBackoff<T>(
         }
         // Terminal/not_found already recorded; nothing else to mark here.
         throw classifiedError; // Throw if no fallback or fallback failed.
+      }
+
+      if (classifiedError instanceof TerminalQuotaError) {
+        if (attempt >= maxAttempts) {
+          if (onPersistent429) {
+            try {
+              const fallbackModel = await onPersistent429(
+                authType,
+                classifiedError,
+              );
+              if (fallbackModel) {
+                attempt = 0;
+                currentDelay = initialDelayMs;
+                continue;
+              }
+            } catch (fallbackError) {
+              debugLogger.warn('Fallback failed:', fallbackError);
+            }
+          }
+          throw classifiedError;
+        }
+
+        const jitter = currentDelay * 0.3 * (Math.random() * 2 - 1);
+        const delayWithJitter = Math.max(0, currentDelay + jitter);
+        debugLogger.warn(
+          `Attempt ${attempt} hit quota limit: ${classifiedError.message}. Retrying in ${Math.round(delayWithJitter)}ms...`,
+        );
+        if (onRetry) {
+          onRetry(attempt, classifiedError, delayWithJitter);
+        }
+        await delay(delayWithJitter, signal);
+        currentDelay = Math.min(maxDelayMs, currentDelay * 2);
+        continue;
       }
 
       // Handle ValidationRequiredError - user needs to verify before proceeding

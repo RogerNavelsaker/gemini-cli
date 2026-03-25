@@ -550,6 +550,24 @@ describe('ShellExecutionService', () => {
       expect(mockPtyProcess.resize).toHaveBeenCalledWith(100, 40);
     });
 
+    it('should ignore EBADF errors when resizing an exited pty', async () => {
+      const resizeError = Object.assign(new Error('EBADF: bad file descriptor'), {
+        code: 'EBADF',
+      });
+      mockPtyProcess.resize.mockImplementation(() => {
+        throw resizeError;
+      });
+
+      await expect(
+        simulateExecution('ls -l', (pty) => {
+          ShellExecutionService.resizePty(pty.pid, 100, 40);
+          pty.onExit.mock.calls[0][0]({ exitCode: 0, signal: null });
+        }),
+      ).resolves.not.toThrow();
+
+      expect(mockPtyProcess.resize).toHaveBeenCalledWith(100, 40);
+    });
+
     it('should re-throw other errors during resize', async () => {
       const otherError = new Error('Some other error');
       mockPtyProcess.resize.mockImplementation(() => {

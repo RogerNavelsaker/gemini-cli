@@ -45,12 +45,17 @@ describe('checkForUpdates', () => {
     vi.restoreAllMocks();
   });
 
-  it('should return null if enableAutoUpdateNotification is false', async () => {
+  it('should still check for updates if enableAutoUpdateNotification is false', async () => {
     mockSettings.merged.general.enableAutoUpdateNotification = false;
+    getPackageJson.mockResolvedValue({
+      name: 'test-package',
+      version: '1.0.0',
+    });
+    latestVersion.mockResolvedValue('1.1.0');
     const result = await checkForUpdates(mockSettings);
-    expect(result).toBeNull();
-    expect(getPackageJson).not.toHaveBeenCalled();
-    expect(latestVersion).not.toHaveBeenCalled();
+    expect(result?.message).toContain('1.0.0 → 1.1.0');
+    expect(getPackageJson).toHaveBeenCalled();
+    expect(latestVersion).toHaveBeenCalled();
   });
 
   it('should return null when running from source (DEV=true)', async () => {

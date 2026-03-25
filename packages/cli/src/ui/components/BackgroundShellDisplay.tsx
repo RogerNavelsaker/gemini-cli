@@ -90,7 +90,21 @@ export const BackgroundShellDisplay = ({
 
     const ptyWidth = Math.max(1, width - BORDER_WIDTH - CONTENT_PADDING_X * 2);
     const ptyHeight = Math.max(1, height - TOTAL_OVERHEAD_HEIGHT);
-    ShellExecutionService.resizePty(activePid, ptyWidth, ptyHeight);
+    try {
+      ShellExecutionService.resizePty(activePid, ptyWidth, ptyHeight);
+    } catch (e) {
+      if (
+        !(
+          e instanceof Error &&
+          (e.message.includes('Cannot resize a pty that has already exited') ||
+            e.message.includes('EBADF') ||
+            'code' in e &&
+              (e.code === 'EBADF' || e.code === 'ESRCH'))
+        )
+      ) {
+        throw e;
+      }
+    }
   }, [activePid, width, height]);
 
   useEffect(() => {

@@ -101,33 +101,30 @@ describe('retryWithBackoff', () => {
     expect(mockFn).toHaveBeenCalledTimes(3);
   });
 
-  it('should default to 10 maxAttempts if no options are provided', async () => {
-    // This function will fail more than 10 times to ensure all retries are used.
-    const mockFn = createFailingFunction(15);
+  it('should default to 1000 maxAttempts if no options are provided', async () => {
+    const mockFn = createFailingFunction(1005);
 
     const promise = retryWithBackoff(mockFn);
 
     await Promise.all([
-      expect(promise).rejects.toThrow('Simulated error attempt 10'),
+      expect(promise).rejects.toThrow('Simulated error attempt 1000'),
       vi.runAllTimersAsync(),
     ]);
 
-    expect(mockFn).toHaveBeenCalledTimes(10);
+    expect(mockFn).toHaveBeenCalledTimes(1000);
   });
 
-  it('should default to 10 maxAttempts if options.maxAttempts is undefined', async () => {
-    // This function will fail more than 10 times to ensure all retries are used.
-    const mockFn = createFailingFunction(15);
+  it('should default to 1000 maxAttempts if options.maxAttempts is undefined', async () => {
+    const mockFn = createFailingFunction(1005);
 
     const promise = retryWithBackoff(mockFn, { maxAttempts: undefined });
 
-    // Expect it to fail with the error from the 10th attempt.
     await Promise.all([
-      expect(promise).rejects.toThrow('Simulated error attempt 10'),
+      expect(promise).rejects.toThrow('Simulated error attempt 1000'),
       vi.runAllTimersAsync(),
     ]);
 
-    expect(mockFn).toHaveBeenCalledTimes(10);
+    expect(mockFn).toHaveBeenCalledTimes(1000);
   });
 
   it('should not retry if shouldRetry returns false', async () => {
@@ -564,7 +561,7 @@ describe('retryWithBackoff', () => {
         'oauth-personal',
         expect.any(TerminalQuotaError),
       );
-      expect(mockFn).toHaveBeenCalledTimes(2);
+      expect(mockFn).toHaveBeenCalledTimes(4);
     });
 
     it('should use retryDelayMs from RetryableQuotaError', async () => {
@@ -607,9 +604,12 @@ describe('retryWithBackoff', () => {
           authType,
         });
 
-        await expect(promise).rejects.toThrow('Daily limit reached');
+        await Promise.all([
+          expect(promise).rejects.toThrow('Daily limit reached'),
+          vi.runAllTimersAsync(),
+        ]);
         expect(fallbackCallback).toHaveBeenCalled();
-        expect(mockFn).toHaveBeenCalledTimes(1);
+        expect(mockFn).toHaveBeenCalledTimes(3);
       },
     );
   });

@@ -114,7 +114,6 @@ export class KeychainService {
     }
 
     // If native failed or was skipped, return the secure file fallback.
-    debugLogger.log('Using FileKeychain fallback for secure storage.');
     return new FileKeychain();
   }
 
