@@ -1,0 +1,14 @@
+{
+  "name": "@rona/gemini-cli-prep",
+  "private": true,
+  "version": "0.35.0-prep.1",
+  "type": "module",
+  "packageManager": "bun@1.3.10",
+  "scripts": {
+    "postinstall": "bun run scripts/prepare-package.mjs",
+    "verify": "bun run scripts/verify-package.mjs"
+  },
+  "dependencies": {
+    "@google/gemini-cli": "0.35.0"
+  }
+}
