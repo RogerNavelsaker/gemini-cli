@@ -34,6 +34,14 @@ assertIncludes(
   'const isEbadf = err.code === \'EBADF\' || err.message?.includes(\'EBADF\');',
 );
 assertIncludes(
+  path.join(cliRoot, 'dist/src/ui/components/messages/ShellToolMessage.js'),
+  "e.message.includes('EBADF')",
+);
+assertIncludes(
+  path.join(packageRoot('@lydell/node-pty'), 'unixTerminal.js'),
+  "if (message.includes('EBADF') || message.includes('ESRCH')) {",
+);
+assertIncludes(
   path.join(coreRoot, 'dist/src/utils/retry.js'),
   'export const DEFAULT_MAX_ATTEMPTS = 1000;',
 );

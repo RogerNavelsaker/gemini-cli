@@ -53,6 +53,52 @@ replaceOnce(
 );
 
 replaceOnce(
+  path.join(cliRoot, 'dist/src/ui/components/messages/ShellToolMessage.js'),
+  [
+    '            catch (e) {',
+    '                if (!(e instanceof Error &&',
+    "                    e.message.includes('Cannot resize a pty that has already exited'))) {",
+    '                    throw e;',
+    '                }',
+    '            }',
+  ].join('\n'),
+  [
+    '            catch (e) {',
+    '                const isExpectedResizeError = e instanceof Error &&',
+    "                    (e.message.includes('Cannot resize a pty that has already exited') ||",
+    "                        e.message.includes('EBADF') ||",
+    "                        e.message.includes('ESRCH'));",
+    '                if (!isExpectedResizeError) {',
+    '                    throw e;',
+    '                }',
+    '            }',
+  ].join('\n'),
+);
+
+replaceOnce(
+  path.join(packageRoot('@lydell/node-pty'), 'unixTerminal.js'),
+  [
+    '        pty.resize(this._fd, cols, rows);',
+    '        this._cols = cols;',
+    '        this._rows = rows;',
+  ].join('\n'),
+  [
+    '        try {',
+    '            pty.resize(this._fd, cols, rows);',
+    '            this._cols = cols;',
+    '            this._rows = rows;',
+    '        }',
+    '        catch (e) {',
+    "            var message = e instanceof Error ? e.message : String(e);",
+    "            if (message.includes('EBADF') || message.includes('ESRCH')) {",
+    '                return;',
+    '            }',
+    '            throw e;',
+    '        }',
+  ].join('\n'),
+);
+
+replaceOnce(
   path.join(coreRoot, 'dist/src/utils/retry.js'),
   'export const DEFAULT_MAX_ATTEMPTS = 10;',
   'export const DEFAULT_MAX_ATTEMPTS = 1000;',
