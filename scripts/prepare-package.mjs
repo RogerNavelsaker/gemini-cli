@@ -186,6 +186,26 @@ replaceOnce(
   ].join('\n'),
 );
 
+replaceOnce(
+  path.join(cliRoot, 'dist/src/utils/installationInfo.js'),
+  [
+    "        // Assume global npm",
+    "        const updateCommand = 'npm install -g @google/gemini-cli@latest';",
+  ].join('\n'),
+  [
+    "        // Check for nix store",
+    "        if (realPath.startsWith('/nix/store/')) {",
+    "            return {",
+    "                packageManager: PackageManager.UNKNOWN,",
+    "                isGlobal: false,",
+    "                updateMessage: 'Running from the Nix store. Please update your Nix configuration.',",
+    "            };",
+    "        }",
+    "        // Assume global npm",
+    "        const updateCommand = 'npm install -g @google/gemini-cli@latest';",
+  ].join('\n'),
+);
+
 removeOnce(
   path.join(cliRoot, 'dist/src/utils/handleAutoUpdate.js'),
   [
